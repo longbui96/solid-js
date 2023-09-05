@@ -30,6 +30,7 @@ function App() {
           <button html="submit">
             Submit
           </button>
+          <FormSelect name={"org1"} options={options} multiple={true} defaultValues={defaultValues.org} />
         </Form>
       </header>
     </div>

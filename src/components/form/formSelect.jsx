@@ -2,24 +2,28 @@ import { createEffect, createSignal } from "solid-js";
 import "./formSelect.css";
 
 const FormSelect = ({ multiple, options, defaultValues, ...restProps }) => {
+  let inputRef;
+  let dropdownRef;
   const [selected, setSelected] = createSignal(defaultValues ? defaultValues.split(',') : []);
+  const [expanded, setExpanded] = createSignal(false);
 
   createEffect(() => {
-    let selectValues = document.getElementById("_selectValues");
-    selectValues.value = selected();
+    inputRef.value = selected();
   })
 
-  var expanded = false;
-
-  function showCheckboxes() {
-    let checkboxes = document.getElementById("checkboxes");
-    if (!expanded) {
-      checkboxes.style.display = "block";
-      expanded = true;
-    } else {
-      checkboxes.style.display = "none";
-      expanded = false;
+  const outsideListener = (event) => {
+    if (!dropdownRef.contains(event.target) && expanded()) {
+      setExpanded(false);
     }
+  }
+
+  createEffect(() => {
+    document.addEventListener('click', event => outsideListener(event))
+    return document.removeEventListener('click', event => outsideListener(event))
+  })
+  
+  function dropdownToggle() {
+    setExpanded(!expanded());
   }
 
   const handleChange = (event) => {
@@ -41,19 +45,18 @@ const FormSelect = ({ multiple, options, defaultValues, ...restProps }) => {
   };
 
   return multiple ? (
-    <div class="multiselect">
-      <div class="selectBox" onclick={showCheckboxes}>
+    <div ref={dropdownRef} class="multiselect">
+      <div class="selectBox" onclick={dropdownToggle}>
         <select>
           <option>Select an option</option>
         </select>
         <div class="overSelect"></div>
-        <input id={'_selectValues'} name={restProps.name} />
+        <input ref={inputRef} name={restProps.name} style={{display: 'none'}}/>
       </div>
-      <div id="checkboxes">
+      <div class="checkboxes" style={{display: expanded() ? 'block' : 'none'}}>
         <label for="select-all" onClick={handleSelectAll}>
           <input
             type="checkbox"
-            id={"select-all"}
             value={""}
             checked={selected().length === options.length}
             indeterminate={selected().length !== 0 && selected().length !== options.length}
@@ -63,7 +66,7 @@ const FormSelect = ({ multiple, options, defaultValues, ...restProps }) => {
         {options.map((e, i) => (
           <label for={e.value} onClick={handleChange}>
             <input
-              id={e.value}
+              id={`${restProps.name}.${e.value}`}
               type="checkbox"
               value={e.value}
               checked={selected().includes(e.value.toString())}
